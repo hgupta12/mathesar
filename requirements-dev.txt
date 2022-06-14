@@ -9,3 +9,4 @@ Sphinx==3.5.3
 playwright==1.18.1
 pytest-playwright==0.2.3
 flake8-no-types==1.4.0
+django-silk==4.3.0

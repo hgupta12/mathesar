@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django_filters",
     "django_property_filter",
     "mathesar",
+    "silk",
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "silk.middleware.SilkyMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -202,3 +204,8 @@ MATHESAR_CLIENT_DEV_URL = 'http://localhost:3000'
 MATHESAR_CAPTURE_UNHANDLED_EXCEPTION = decouple_config('CAPTURE_UNHANDLED_EXCEPTION', default=False)
 
 STATICFILES_DIRS = [MATHESAR_UI_BUILD_LOCATION]
+
+# Silk profiling settings; see https://github.com/jazzband/django-silk#profiling=
+SILKY_PYTHON_PROFILER = True
+SILKY_PYTHON_PROFILER_BINARY = True
+SILKY_PYTHON_PROFILER_RESULT_PATH = 'profiles/'
