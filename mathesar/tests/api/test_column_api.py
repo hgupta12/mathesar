@@ -8,10 +8,12 @@ from db.constants import COLUMN_NAME_TEMPLATE
 from db.types.base import PostgresType, MathesarCustomType
 
 from mathesar.api.exceptions.error_codes import ErrorCodes
-from mathesar.tests.api.test_table_api import check_columns_response
+from mathesar.tests.api.test_table_api import check_columns_response, OperationTracker
 
 
 def test_column_list(column_test_table, client):
+    a = OperationTracker()
+    a.register()
     response = client.get(f"/api/db/v0/tables/{column_test_table.id}/columns/")
     assert response.status_code == 200
     response_data = response.json()

@@ -7,7 +7,7 @@ from sqlalchemy.exc import ProgrammingError
 
 from db.records import exceptions
 
-
+meta_cache = {}
 def execute_statement(engine, statement, connection_to_use=None):
     try:
         if connection_to_use:

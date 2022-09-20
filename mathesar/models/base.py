@@ -101,6 +101,7 @@ class DatabaseObject(ReflectionManagerMixin, BaseModel):
 # TODO: Replace with a proper form of caching
 # See: https://github.com/centerofci/mathesar/issues/280
 _engine_cache = {}
+_meta_cache = {}
 
 
 class Database(ReflectionManagerMixin, BaseModel):
@@ -147,6 +148,17 @@ class Schema(DatabaseObject):
     @property
     def _sa_engine(self):
         return self.database._sa_engine
+
+    @property
+    def _sa_metadata(self):
+        global _meta_cache
+        # We're caching this since the engine is used frequently.
+        db_name = self.name
+        if db_name not in _meta_cache:
+            meta = MetaData(bind=self._sa_engine)
+            meta.reflect(schema=self.name)
+            _meta_cache[self.name] = meta
+        return _meta_cache[db_name]
 
     @cached_property
     def name(self):
@@ -295,6 +307,7 @@ class Table(DatabaseObject, Relation):
             sa_table = reflect_table_from_oid(
                 oid=self.oid,
                 engine=self._sa_engine,
+                metadata=self.schema._sa_metadata
             )
         # We catch these errors, since it lets us decouple the cadence of
         # overall DB reflection from the cadence of cache expiration for
