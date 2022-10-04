@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from mathesar.api.exceptions.mixins import MathesarErrorMessageMixin
 from mathesar.models.base import Schema
+from mathesar.models.query import UIQuery
 
 
 class ModelNameField(serializers.CharField):
@@ -35,4 +36,4 @@ class SchemaSerializer(MathesarErrorMessageMixin, serializers.HyperlinkedModelSe
         return obj.tables.count()
 
     def get_num_queries(self, obj):
-        return sum(t.queries.count() for t in obj.tables.all())
+        return UIQuery.objects.filter(base_table__schema=obj).count()
