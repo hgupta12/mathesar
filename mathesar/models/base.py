@@ -46,7 +46,7 @@ from db.tables.utils import get_primary_key_column
 from mathesar import reflection
 from mathesar.models.relation import Relation
 from mathesar.utils import models as model_utils
-from mathesar.utils.prefetch import PrefetchManager, Prefetcher
+from mathesar.utils.prefetch import PrefetchManager, PrefetchManagerMixin, PrefetchQuerySet, Prefetcher
 from mathesar.database.base import create_mathesar_engine
 from mathesar.database.types import UIType, get_ui_type_from_db_type
 
@@ -62,10 +62,14 @@ class BaseModel(models.Model):
         abstract = True
 
 
-class DatabaseObjectManager(PrefetchManager):
+class ReflectionMixin:
     def get_queryset(self):
         reflection.reflect_db_objects()
         return super().get_queryset()
+
+
+class DatabaseObjectManager(PrefetchManager, ReflectionMixin):
+    pass
 
 
 class ReflectionManagerMixin(models.Model):
@@ -249,13 +253,22 @@ class ColumnPrefetcher(Prefetcher):
         pass
 
 
-class Table(DatabaseObject, Relation):
-    # These are fields whose source of truth is in the model
-    MODEL_FIELDS = ['import_verified']
-    current_objects = models.Manager()
-    objects = DatabaseObjectManager(
-        # TODO Move the Prefetcher into a separate class and replace lambdas with proper function
-        _sa_table=Prefetcher(
+class TableQueryset(PrefetchQuerySet):
+    def fetch_related_objects(self):
+        dj_obj_prefetches_qs = self.select_related('settings__preview_settings').prefetch_related('schema', 'schema__database', 'columns')
+        queryset_with_related_objs = dj_obj_prefetches_qs.prefetch('_sa_table', 'columns')
+        return queryset_with_related_objs
+
+
+class TableDefaultPrefetchMixin(PrefetchManagerMixin):
+
+    @classmethod
+    def get_queryset_class(cls):
+        return TableQueryset
+
+    # TODO Move the Prefetcher into a separate class and replace lambdas with proper function
+    prefetch_definitions = {
+        '_sa_table': Prefetcher(
             filter=lambda oids, tables: reflect_tables_from_oids(oids, list(tables)[0]._sa_engine)
             if len(tables) > 0 else [],
             mapper=lambda table: table.oid,
@@ -267,8 +280,31 @@ class Table(DatabaseObject, Relation):
                 _sa_table
             )
         ),
-        columns=ColumnPrefetcher,
-    )
+        'columns': ColumnPrefetcher
+    }
+
+    def __init__(self):
+        super(TableDefaultPrefetchMixin, self).__init__()
+
+
+class ReflectedTableManager(
+    ReflectionMixin,
+    TableDefaultPrefetchMixin
+):
+    pass
+
+
+class TableManager(
+    TableDefaultPrefetchMixin
+):
+    pass
+
+
+class Table(DatabaseObject, Relation):
+    # These are fields whose source of truth is in the model
+    MODEL_FIELDS = ['import_verified']
+    current_objects = TableManager()
+    objects = ReflectedTableManager()
     schema = models.ForeignKey('Schema', on_delete=models.CASCADE,
                                related_name='tables')
     import_verified = models.BooleanField(blank=True, null=True)
