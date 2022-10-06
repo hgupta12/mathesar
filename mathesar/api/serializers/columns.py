@@ -33,8 +33,8 @@ class TypeOptionSerializer(MathesarErrorMessageMixin, serializers.Serializer):
     fields = serializers.CharField(required=False)
 
     def validate(self, attrs):
-        if attrs.get('scale', None) is not None and attrs.get('precision', None) is None:
-            attrs['precision'] = 1000
+        if (attrs.get('precision') is not None) != (attrs.get('scale') is not None):
+            raise ValidationError('Either precision and scale must both be given, or neither.')
         return super().validate(attrs)
 
     def run_validation(self, data=empty):
