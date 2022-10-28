@@ -1,5 +1,6 @@
 import tempfile
 
+import warnings
 from psycopg2 import sql
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from psycopg2.errors import NotNullViolation, ForeignKeyViolation, DatatypeMismatch, UniqueViolation, ExclusionViolation
@@ -27,6 +28,8 @@ def insert_record_or_records(table, engine, record_data):
             id_value = result.inserted_primary_key[0]
             if id_value is not None:
                 return get_record(table, engine, id_value)
+            else:
+                warnings.warn(f"{table.name} does not have a primary key column")
     # Do not return any records if multiple rows were added.
     return None
 
