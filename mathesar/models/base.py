@@ -910,5 +910,9 @@ def compute_default_preview_template(table):
             break
     if preview_column is None:
         preview_column = primary_key_column
-    preview_template = f"{{{preview_column.id}}}"
+    if preview_column:
+        preview_template = f"{{{preview_column.id}}}"
+    else:
+        # Incase a table does not have any column
+        preview_template = ""
     return preview_template
